@@ -6,10 +6,7 @@
   "functions": {
     "api/generate.ts": {
       "maxDuration": 60,
-      "includeFiles": [
-        "node_modules/ffmpeg-static/ffmpeg*",
-        "node_modules/@ffmpeg-installer/ffmpeg/**/*"
-      ]
+      "includeFiles": "node_modules/@ffmpeg-installer/ffmpeg/**/*"
     }
   }
 }
