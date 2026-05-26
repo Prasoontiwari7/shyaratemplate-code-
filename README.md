@@ -18,7 +18,7 @@ copy .env.example .env   # Windows (PowerShell/cmd)
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:4000`.
 
 ## How it works
 

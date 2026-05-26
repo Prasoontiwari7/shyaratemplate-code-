@@ -27,3 +27,21 @@ Optional:
 
 - `FFMPEG_PATH` – override the FFmpeg binary path (advanced).
 
+## Local testing with ngrok
+
+To expose your local backend publicly for testing:
+
+```powershell
+cd C:\Users\tiwar\Downloads\EDITOR\video-editor--main
+npm install
+npm run dev:4000
+```
+
+In a second terminal:
+
+```powershell
+npm run ngrok
+```
+
+Then open the public `https://...ngrok.io` URL shown by ngrok in your browser. Your frontend and `/api/generate` endpoint will be reachable from the internet while your laptop is running.
+

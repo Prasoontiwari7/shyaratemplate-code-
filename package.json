@@ -6,8 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx dev-server.ts",
+    "dev:4000": "set PORT=4000&& npx tsx dev-server.ts",
     "start": "tsx dev-server.ts",
     "build": "tsc --noEmit",
+    "vercel-build": "npm run build",
+    "ngrok": "npx ngrok http 4000",
+    "deploy:vercel": "npx vercel --prod --yes",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

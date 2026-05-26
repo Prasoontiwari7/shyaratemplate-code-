@@ -8,3 +8,10 @@ coverage/
 .env*
 !.env.example
 renders/
+
+# Local temporary files
+test-gen.*
+body.json
+out.bin
+
+.vercel
