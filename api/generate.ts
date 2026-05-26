@@ -48,21 +48,45 @@ function resolveFfmpegBinaryPreferInstaller() {
   return 'ffmpeg';
 }
 
-const FFMPEG = resolveFfmpegBinaryPreferInstaller();
+let FFMPEG = resolveFfmpegBinaryPreferInstaller();
 
-// If @ffmpeg-installer/ffmpeg is present, expose its path via env so deployments can reference it.
-try {
-  const installer = require('@ffmpeg-installer/ffmpeg');
-  if (installer && typeof installer.path === 'string' && installer.path.trim()) {
-    process.env.FFMPEG_PATH = process.env.FFMPEG_PATH || installer.path;
+function getInstallerFfmpegPath() {
+  try {
+    const installer = require('@ffmpeg-installer/ffmpeg');
+    if (installer && typeof installer.path === 'string' && installer.path.trim()) {
+      return installer.path;
+    }
+  } catch {
+    return '';
   }
-} catch {}
+}
 
-// Ensure Vercel serverless can locate fontconfig settings for drawtext.
-const fontConfigDir = path.join(process.cwd(), 'fontconfig');
-const fontConfigFile = path.join(fontConfigDir, 'fonts.conf');
-process.env.FONTCONFIG_PATH = process.env.FONTCONFIG_PATH || fontConfigDir;
-process.env.FONTCONFIG_FILE = process.env.FONTCONFIG_FILE || fontConfigFile;
+const installerFfmpegPath = getInstallerFfmpegPath();
+if (installerFfmpegPath) {
+  process.env.FFMPEG_PATH = installerFfmpegPath;
+  FFMPEG = installerFfmpegPath;
+}
+
+function getRuntimeFontConfig() {
+  const fontsDir = path.join(process.cwd(), 'public', 'fonts');
+  const configDir = path.join(os.tmpdir(), 'fontconfig');
+  const configFile = path.join(configDir, 'fonts.conf');
+
+  return { fontsDir, configDir, configFile };
+}
+
+function ensureFontConfig() {
+  const { fontsDir, configDir, configFile } = getRuntimeFontConfig();
+  process.env.FONTCONFIG_PATH = configDir;
+  process.env.FONTCONFIG_FILE = configFile;
+
+  return fsp.mkdir(configDir, { recursive: true })
+    .then(() => {
+      const configContents = `<?xml version="1.0"?>\n<fontconfig>\n  <dir>${fontsDir}</dir>\n  <cachedir>${path.join(os.tmpdir(), 'fontconfig-cache')}</cachedir>\n</fontconfig>`;
+      return fsp.writeFile(configFile, configContents, 'utf8');
+    })
+    .then(() => ({ fontsDir, configDir, configFile }));
+}
 
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
@@ -426,6 +450,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     const outputName = `WeddingInvite-${Date.now()}-${crypto.randomUUID()}.mp4`;
     const outputPath = path.join(tmpRoot, outputName);
+
+    await ensureFontConfig();
 
     const ffmpegArgs = ['-y', '-i', inputPath, '-vf', filterString, '-c:a', 'copy', outputPath];
 
