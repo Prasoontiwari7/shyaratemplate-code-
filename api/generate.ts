@@ -370,57 +370,64 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     };
 
     const red = '0xD91E2F';
-    const gold = '0xB8860B';
+    const gold = '0xF9C12D';
     const darkGold = '0x8B6A1F';
     const nearBlack = '0x1A1A1A';
     const cream = '0xFFF8DC';
 
     const extraOrVenueRaw = extraText1 ? extraText1 : venue;
 
-    const extraLines = wrapWords(extraOrVenueRaw, 30, 2).filter(Boolean).map(escapeFFmpegText);
+    const extraLines = wrapWords(extraOrVenueRaw, 32, 2).filter(Boolean).map(escapeFFmpegText);
     const dateLines = wrapWords(date, 22, 2).filter(Boolean).map(escapeFFmpegText);
     const venueLines = wrapWords(venue, 28, 3).filter(Boolean).map(escapeFFmpegText);
+
+    const groomFontSize = 340;
+    const brideFontSize = 340;
+    const extraBaseSize = 150;
+    const dateBaseSize = 180;
+    const venueHeadingSize = 165;
+    const venueLineSize = 145;
 
     const filters: string[] = [
       `drawtext=fontfile=${lucienFont}:text='${textGroom}':expansion=none:x=(w-text_w)/2:y=${floatingY(
         'h*0.23',
-      )}:fontsize=(${subtlePulse(260)})*${groomScale.toFixed(
+      )}:fontsize=(${subtlePulse(groomFontSize)})*${groomScale.toFixed(
         3,
-      )}:fontcolor=${red}:borderw=3:bordercolor=${darkGold}@0.6:shadowcolor=black@0.45:shadowx=3:shadowy=3:alpha=${getAlpha(
+      )}:fontcolor=${red}:borderw=4:bordercolor=${darkGold}@0.7:shadowcolor=black@0.55:shadowx=4:shadowy=4:alpha=${getAlpha(
         0,
       )}:fix_bounds=1`,
       `drawtext=fontfile=${lucienFont}:text='${textBride}':expansion=none:x=(w-text_w)/2:y=${floatingY(
         'h*0.34',
-      )}:fontsize=(${subtlePulse(260)})*${brideScale.toFixed(
+      )}:fontsize=(${subtlePulse(brideFontSize)})*${brideScale.toFixed(
         3,
-      )}:fontcolor=${red}:borderw=3:bordercolor=${darkGold}@0.6:shadowcolor=black@0.45:shadowx=3:shadowy=3:alpha=${getAlpha(
+      )}:fontcolor=${red}:borderw=4:bordercolor=${darkGold}@0.7:shadowcolor=black@0.55:shadowx=4:shadowy=4:alpha=${getAlpha(
         0,
       )}:fix_bounds=1`,
     ];
 
     extraLines.forEach((line, idx) => {
-      const y = idx === 0 ? 'h*0.50' : `h*0.50+${idx * 160}`;
+      const y = idx === 0 ? 'h*0.53' : `h*0.53+${idx * 150}`;
       filters.push(
         `drawtext=fontfile=${futuraFont}:text='${line}':expansion=none:x='${slideInX(
           '(w-text_w)/2',
           1,
-          -250,
+          -300,
         )}':y=${floatingY(
           y,
-        )}:fontsize=${zoomIn(110, 0.8)}:fontcolor=${gold}:borderw=2:bordercolor=${cream}@0.4:shadowcolor=black@0.25:shadowx=3:shadowy=3:box=1:boxcolor=black@0.12:boxborderw=25:alpha=${getAlpha(
+        )}:fontsize=${zoomIn(extraBaseSize, 1.2)}:fontcolor=${gold}:borderw=2:bordercolor=${cream}@0.6:shadowcolor=black@0.28:shadowx=4:shadowy=4:box=1:boxcolor=black@0.16:boxborderw=35:alpha=${getAlpha(
           1,
         )}:fix_bounds=1`,
       );
     });
 
     dateLines.forEach((line, idx) => {
-      const y = idx === 0 ? 'h*0.58' : `h*0.58+${idx * 180}`;
+      const y = idx === 0 ? 'h*0.65' : `h*0.65+${idx * 200}`;
       filters.push(
         `drawtext=fontfile=${loraFont}:text='${line}':expansion=none:x=${driftingX(
           '(w-text_w)/2',
         )}:y=${floatingY(
           y,
-        )}:fontsize=155:fontcolor=${gold}:borderw=2:bordercolor=${darkGold}@0.5:shadowcolor=black@0.18:shadowx=2:shadowy=2:alpha=${getAlpha(
+        )}:fontsize=${dateBaseSize}:fontcolor=${gold}:borderw=3:bordercolor=${darkGold}@0.55:shadowcolor=black@0.22:shadowx=3:shadowy=3:box=1:boxcolor=black@0.12:boxborderw=25:alpha=${getAlpha(
           2,
         )}:fix_bounds=1`,
       );
@@ -428,18 +435,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     filters.push(
       `drawtext=fontfile=${loraFont}:text='VENUE':expansion=none:x=(w-text_w)/2:y=${floatingY(
-        'h*0.74',
-      )}:fontsize=135:fontcolor=${gold}:borderw=2:bordercolor=${darkGold}@0.4:shadowcolor=black@0.14:shadowx=2:shadowy=2:alpha=${getAlpha(
+        'h*0.78',
+      )}:fontsize=${venueHeadingSize}:fontcolor=${gold}:borderw=3:bordercolor=${darkGold}@0.5:shadowcolor=black@0.2:shadowx=3:shadowy=3:box=1:boxcolor=black@0.12:boxborderw=25:alpha=${getAlpha(
         2,
       )}:fix_bounds=1`,
     );
 
     venueLines.forEach((line, idx) => {
-      const y = `h*0.81+${idx * 130}`;
+      const y = `h*0.84+${idx * 135}`;
       filters.push(
         `drawtext=fontfile=${loraFont}:text='${line}':expansion=none:x=(w-text_w)/2:y=${floatingY(
           y,
-        )}:fontsize=115:fontcolor=${nearBlack}:borderw=1:bordercolor=${gold}@0.35:shadowcolor=${cream}@0.3:shadowx=2:shadowy=2:box=1:boxcolor=${cream}@0.06:boxborderw=20:alpha=${getAlpha(
+        )}:fontsize=${venueLineSize}:fontcolor=${nearBlack}:borderw=2:bordercolor=${gold}@0.45:shadowcolor=${cream}@0.35:shadowx=2:shadowy=2:box=1:boxcolor=${cream}@0.08:boxborderw=20:alpha=${getAlpha(
           2,
         )}:fix_bounds=1`,
       );

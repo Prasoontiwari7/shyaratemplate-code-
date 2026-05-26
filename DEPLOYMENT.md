@@ -18,6 +18,8 @@ This repo is set up for Vercel using:
 
 - `api/generate.ts` is configured with `maxDuration: 60` in `vercel.json`.
 - Keep templates reasonably short so rendering completes within the serverless timeout.
+- Rendering is CPU-based. No GPU is required for FFmpeg drawtext rendering.
+- A normal modern laptop can run this locally, but large or many concurrent renders will take longer.
 
 ## Environment variables
 
