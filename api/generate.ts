@@ -58,6 +58,12 @@ try {
   }
 } catch {}
 
+// Ensure Vercel serverless can locate fontconfig settings for drawtext.
+const fontConfigDir = path.join(process.cwd(), 'fontconfig');
+const fontConfigFile = path.join(fontConfigDir, 'fonts.conf');
+process.env.FONTCONFIG_PATH = process.env.FONTCONFIG_PATH || fontConfigDir;
+process.env.FONTCONFIG_FILE = process.env.FONTCONFIG_FILE || fontConfigFile;
+
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
