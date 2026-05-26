@@ -526,11 +526,14 @@
           });
 
           if (!response.ok) {
-            let errDetails = 'Failed to generate video';
+            let errDetails = `Failed to generate video (status ${response.status})`;
             try {
               const err = await response.json();
               errDetails = err?.details || err?.error || errDetails;
-            } catch {}
+            } catch (jsonErr) {
+              const text = await response.text();
+              errDetails = text || errDetails;
+            }
             throw new Error(errDetails);
           }
 

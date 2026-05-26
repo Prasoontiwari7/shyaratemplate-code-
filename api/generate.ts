@@ -455,7 +455,24 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     await ensureFontConfig();
 
-    const ffmpegArgs = ['-y', '-i', inputPath, '-vf', filterString, '-c:a', 'copy', outputPath];
+    const ffmpegArgs = [
+      '-y',
+      '-i',
+      inputPath,
+      '-vf',
+      filterString,
+      '-c:v',
+      'libx264',
+      '-preset',
+      'ultrafast',
+      '-crf',
+      '28',
+      '-pix_fmt',
+      'yuv420p',
+      '-c:a',
+      'copy',
+      outputPath,
+    ];
 
     // Quick runtime check: verify the selected ffmpeg binary supports drawtext.
     try {
