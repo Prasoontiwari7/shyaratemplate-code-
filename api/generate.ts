@@ -118,6 +118,11 @@ function runProcess(command: string, args: string[]) {
     const child = spawn(command, args, {
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        FONTCONFIG_PATH: process.env.FONTCONFIG_PATH,
+        FONTCONFIG_FILE: process.env.FONTCONFIG_FILE,
+      },
     });
 
     let stdout = '';
