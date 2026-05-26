@@ -28,7 +28,35 @@ function resolveFfmpegBinary() {
   return 'ffmpeg';
 }
 
-const FFMPEG = resolveFfmpegBinary();
+/* Prefer an npm-provided ffmpeg binary that is more likely to include filters like drawtext.
+   Try @ffmpeg-installer/ffmpeg first, then ffmpeg-static, then system ffmpeg. */
+function resolveFfmpegBinaryPreferInstaller() {
+  const envPath = String(process.env.FFMPEG_PATH || '').trim();
+  if (envPath) return envPath;
+
+  try {
+    // @ffmpeg-installer/ffmpeg exposes a .path to a bundled ffmpeg binary
+    const installer = require('@ffmpeg-installer/ffmpeg');
+    if (installer && typeof installer.path === 'string' && installer.path.trim()) return installer.path;
+  } catch {}
+
+  try {
+    const ffmpegStatic = require('ffmpeg-static');
+    if (typeof ffmpegStatic === 'string' && ffmpegStatic.trim()) return ffmpegStatic;
+  } catch {}
+
+  return 'ffmpeg';
+}
+
+const FFMPEG = resolveFfmpegBinaryPreferInstaller();
+
+// If @ffmpeg-installer/ffmpeg is present, expose its path via env so deployments can reference it.
+try {
+  const installer = require('@ffmpeg-installer/ffmpeg');
+  if (installer && typeof installer.path === 'string' && installer.path.trim()) {
+    process.env.FFMPEG_PATH = process.env.FFMPEG_PATH || installer.path;
+  }
+} catch {}
 
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
@@ -389,6 +417,26 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const outputPath = path.join(tmpRoot, outputName);
 
     const ffmpegArgs = ['-y', '-i', inputPath, '-vf', filterString, '-c:a', 'copy', outputPath];
+
+    // Quick runtime check: verify the selected ffmpeg binary supports drawtext.
+    try {
+      const info = await runProcess(FFMPEG, ['-filters']);
+      const combined = `${info.stdout || ''}\n${info.stderr || ''}`;
+      if (!/drawtext/.test(combined)) {
+        const preview = (combined || '').slice(0, 2000);
+        throw new Error(
+          `Selected ffmpeg (${FFMPEG}) does not support 'drawtext' filter. Filters list preview:\n${preview}`,
+        );
+      }
+    } catch (err: any) {
+      // If the filters command fails, include stderr to help debugging.
+      const details = String(err?.stderr || err?.message || err);
+      throw new Error(
+        `Failed to verify ffmpeg filters for binary ${FFMPEG}. Details: ${details}.\n` +
+          `Ensure the deployment is using a binary that includes libfreetype/fontconfig and the drawtext filter. ` +
+          `You can set the FFMPEG_PATH environment variable in Vercel to a binary that supports drawtext, or bundle a compatible ffmpeg.`,
+      );
+    }
 
     await runProcess(FFMPEG, ffmpegArgs);
 
