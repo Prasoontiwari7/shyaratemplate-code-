@@ -70,22 +70,24 @@ if (installerFfmpegPath) {
 function getRuntimeFontConfig() {
   const fontsDir = path.join(process.cwd(), 'public', 'fonts');
   const configDir = path.join(os.tmpdir(), 'fontconfig');
+  const cacheDir = path.join(os.tmpdir(), 'fontconfig-cache');
   const configFile = path.join(configDir, 'fonts.conf');
 
-  return { fontsDir, configDir, configFile };
+  return { fontsDir, configDir, cacheDir, configFile };
 }
 
 function ensureFontConfig() {
-  const { fontsDir, configDir, configFile } = getRuntimeFontConfig();
+  const { fontsDir, configDir, configFile, cacheDir } = getRuntimeFontConfig();
   process.env.FONTCONFIG_PATH = configDir;
   process.env.FONTCONFIG_FILE = configFile;
 
-  return fsp.mkdir(configDir, { recursive: true })
-    .then(() => {
-      const configContents = `<?xml version="1.0"?>\n<fontconfig>\n  <dir>${fontsDir}</dir>\n  <cachedir>${path.join(os.tmpdir(), 'fontconfig-cache')}</cachedir>\n</fontconfig>`;
-      return fsp.writeFile(configFile, configContents, 'utf8');
-    })
-    .then(() => ({ fontsDir, configDir, configFile }));
+  return Promise.all([
+    fsp.mkdir(configDir, { recursive: true }),
+    fsp.mkdir(cacheDir, { recursive: true }),
+  ]).then(() => {
+    const configContents = `<?xml version="1.0"?>\n<fontconfig>\n  <dir>${fontsDir}</dir>\n  <cachedir>${cacheDir}</cachedir>\n</fontconfig>`;
+    return fsp.writeFile(configFile, configContents, 'utf8');
+  }).then(() => ({ fontsDir, configDir, configFile }));
 }
 
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
@@ -466,10 +468,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         );
       }
     } catch (err: any) {
-      // If the filters command fails, include stderr to help debugging.
       const details = String(err?.stderr || err?.message || err);
       throw new Error(
         `Failed to verify ffmpeg filters for binary ${FFMPEG}. Details: ${details}.\n` +
+          `FONTCONFIG_PATH=${process.env.FONTCONFIG_PATH} FONTCONFIG_FILE=${process.env.FONTCONFIG_FILE} ` +
           `Ensure the deployment is using a binary that includes libfreetype/fontconfig and the drawtext filter. ` +
           `You can set the FFMPEG_PATH environment variable in Vercel to a binary that supports drawtext, or bundle a compatible ffmpeg.`,
       );
