@@ -1,0 +1,10 @@
+{
+  "templates": [
+    {
+      "id": "default",
+      "name": "Default Wedding Template",
+      "video": "/templates/default/template.mp4"
+    }
+  ]
+}
+

@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cinematic Video Editor</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@100..900&display=swap');
+
+      /* Load Custom Fonts for Preview */
+      @font-face {
+        font-family: 'Lucien';
+        src: url('/fonts/lucien.ttf');
+      }
+      @font-face {
+        font-family: 'FuturaCustom';
+        src: url('/fonts/jost.ttf');
+      }
+      @font-face {
+        font-family: 'LoraCustom';
+        src: url('/fonts/lora.ttf');
+      }
+
+      :root {
+        --primary: #c53030;
+        --secondary: #2d3748;
+        --accent: #f7fafc;
+      }
+
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: #fdfdfd;
+        color: var(--secondary);
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 1000px;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        background: white;
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+      }
+
+      @media (max-width: 800px) {
+        .container { grid-template-columns: 1fr; }
+      }
+
+      .preview-section {
+        position: sticky;
+        top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .video-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 9/16;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .form-section h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+      }
+
+      .form-section p {
+        color: #666;
+        margin-bottom: 2rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #9a9a9a;
+      }
+
+      input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        box-sizing: border-box;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.1);
+      }
+
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        box-sizing: border-box;
+        background: white;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.1);
+      }
+
+      button {
+        width: 100%;
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.1s, background 0.2s;
+        margin-top: 1rem;
+      }
+
+      button:hover { background: #9b2c2c; }
+      button:active { transform: scale(0.98); }
+      button:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+      #status {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+        text-align: center;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      #status.success { background: #f0fff4; color: #2f855a; display: block; }
+      #status.error { background: #fff5f5; color: #c53030; display: block; }
+      #status.loading { background: #ebf8ff; color: #2b6cb0; display: block; }
+    </style>
+  </head>
+  <body>
+
+    <div class="container">
+      <div class="preview-section">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="templateSelect">Template</label>
+          <select id="templateSelect"></select>
+        </div>
+        <div class="video-container">
+          <video id="previewVideo" loop muted playsinline>
+            <source src="/templates/default/template.mp4" type="video/mp4">
+          </video>
+          <canvas id="previewCanvas"></canvas>
+        </div>
+        <p style="text-align: center; color: #888; font-size: 0.8rem;">Live Preview Overlay</p>
+      </div>
+
+      <div class="form-section">
+        <h1>Wedding Invitation</h1>
+        <p>Fill in the details to generate your cinematic video.</p>
+        
+        <form id="inviteForm">
+          <div class="form-group">
+            <label for="groom">Groom's Name</label>
+            <input type="text" id="groom" name="groom" placeholder="John" required>
+          </div>
+
+          <div class="form-group">
+            <label for="bride">Bride's Name</label>
+            <input type="text" id="bride" name="bride" placeholder="Jane" required>
+          </div>
+
+          <div class="form-group">
+            <label for="date">Date & Time</label>
+            <input type="text" id="date" name="date" placeholder="October 24, 2026 at 5 PM" required>
+          </div>
+
+          <div class="form-group">
+            <label for="venue">Venue Name</label>
+            <input type="text" id="venue" name="venue" placeholder="Palace Heights, Gwalior" required>
+          </div>
+
+          <div class="form-group">
+            <label for="extra1">Extra Detail 1 (Optional)</label>
+            <input type="text" id="extra1" name="extra1" placeholder="e.g. Dinner to follow at 8 PM">
+          </div>
+          
+          <button type="submit" id="submitBtn">Generate Final Video</button>
+        </form>
+        
+        <div id="status"></div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('inviteForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const status = document.getElementById('status');
+      const video = document.getElementById('previewVideo');
+      const templateSelect = document.getElementById('templateSelect');
+      const canvas = document.getElementById('previewCanvas');
+      const ctx = canvas.getContext('2d');
+      let templateVideoById = {};
+
+      // Sync input values for preview
+      const inputs = {
+        groom: document.getElementById('groom'),
+        bride: document.getElementById('bride'),
+        date: document.getElementById('date'),
+        venue: document.getElementById('venue'),
+        extra1: document.getElementById('extra1')
+      };
+
+      async function loadTemplates() {
+        try {
+          const res = await fetch('/api/templates');
+          const data = await res.json();
+          const templates = Array.isArray(data?.templates) ? data.templates : [];
+
+          templateVideoById = {};
+          templateSelect.innerHTML = '';
+          for (const t of templates) {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name || t.id;
+            templateSelect.appendChild(opt);
+            if (t?.id && t?.video) templateVideoById[t.id] = t.video;
+          }
+
+          if (!templateSelect.value) templateSelect.value = 'default';
+        } catch {
+          templateVideoById = { default: '/templates/default/template.mp4' };
+          templateSelect.innerHTML = '<option value="default">Default Wedding Template</option>';
+          templateSelect.value = 'default';
+        }
+      }
+
+      function setTemplateVideo(templateId) {
+        const src = templateVideoById[templateId] || templateVideoById.default || '/templates/default/template.mp4';
+        const source = video.querySelector('source');
+        source.src = src;
+        video.load();
+        video.play().catch(() => {
+          document.body.addEventListener('click', () => video.play(), { once: true });
+        });
+        resizeCanvas();
+      }
+
+      // Auto-play video on first interaction or load
+      window.addEventListener('load', async () => {
+        await loadTemplates();
+        setTemplateVideo(templateSelect.value || 'default');
+      });
+
+      templateSelect.addEventListener('change', () => {
+        setTemplateVideo(templateSelect.value || 'default');
+      });
+
+      window.addEventListener('resize', resizeCanvas);
+
+      function resizeCanvas() {
+        // Match higher resolution for clarity
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = video.clientWidth * dpr;
+        canvas.height = video.clientHeight * dpr;
+      }
+
+      function getAlpha(t, index, numScenes, duration) {
+        const sceneDur = duration / numScenes;
+        const fadeIn = 0.8;
+        const fadeOut = 0.8;
+        const buffer = 0.3;
+
+        const start = (index * sceneDur) + buffer;
+        const end = ((index + 1) * sceneDur) - buffer;
+
+        if (t < start || t > end) return 0;
+        
+        let alpha = 1;
+        if (t < start + fadeIn) alpha = (t - start) / fadeIn;
+        else if (t > end - fadeOut) alpha = (end - t) / fadeOut;
+        
+        return Math.max(0, Math.min(1, alpha));
+      }
+
+      function wrapTextLines(context, text, maxWidth) {
+        const raw = String(text || '').trim();
+        if (!raw) return [''];
+
+        const paragraphs = raw.split(/\r?\n/);
+        const lines = [];
+
+        const breakLongWord = (word) => {
+          if (context.measureText(word).width <= maxWidth) return [word];
+          const chars = Array.from(word);
+          const parts = [];
+          let current = '';
+          for (const ch of chars) {
+            const candidate = current + ch;
+            if (current && context.measureText(candidate).width > maxWidth) {
+              parts.push(current);
+              current = ch;
+              continue;
+            }
+            current = candidate;
+          }
+          if (current) parts.push(current);
+          return parts.length ? parts : [''];
+        };
+
+        for (const paragraph of paragraphs) {
+          const clean = paragraph.replace(/\s+/g, ' ').trim();
+          if (!clean) continue;
+
+          const words = clean.split(' ').filter(Boolean).flatMap(breakLongWord);
+          let currentLine = '';
+
+          for (const word of words) {
+            const candidate = currentLine ? `${currentLine} ${word}` : word;
+            if (!currentLine || context.measureText(candidate).width <= maxWidth) {
+              currentLine = candidate;
+              continue;
+            }
+
+            lines.push(currentLine);
+            currentLine = word;
+          }
+
+          if (currentLine) lines.push(currentLine);
+        }
+
+        return lines.length ? lines : [''];
+      }
+
+      function fillTextSmart(context, text, x, y, maxFontSize, fontName, maxWidth, maxLines = 1, lineGapFactor = 1.2) {
+        const minFontSize = 30;
+        let size = maxFontSize;
+        let lines = [''];
+
+        while (size > minFontSize) {
+          context.font = `${size}px ${fontName}`;
+          lines = wrapTextLines(context, text, maxWidth);
+          if (lines.length <= maxLines) break;
+          size -= 4;
+        }
+
+        context.font = `${size}px ${fontName}`;
+        lines = wrapTextLines(context, text, maxWidth);
+
+        if (lines.length > maxLines) {
+          const ellipsis = '...';
+          lines = lines.slice(0, maxLines);
+          let last = lines[lines.length - 1] || '';
+          while (last && context.measureText(last + ellipsis).width > maxWidth) {
+            last = last.slice(0, -1);
+          }
+          lines[lines.length - 1] = (last || '') + ellipsis;
+        }
+
+        const lineGap = Math.round(size * lineGapFactor);
+        for (let i = 0; i < lines.length; i++) {
+          context.fillText(lines[i], x, y + (i * lineGap));
+        }
+
+        return size;
+      }
+
+      function strokeTextSmart(context, text, x, y, size, fontName) {
+        context.font = `${size}px ${fontName}`;
+        context.strokeText(text, x, y);
+      }
+
+      function draw() {
+        if (!ctx) {
+          requestAnimationFrame(draw);
+          return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Scale factor relative to target 1080p width
+        const scale = canvas.width / 1080;
+        const t = video.currentTime;
+        const duration = video.duration || 15;
+        const extraVal = inputs.extra1.value.trim();
+        const numScenes = 3;
+        const maxWidth = canvas.width * 0.9;
+
+        // Floating animation sync with server
+        const floatOffset = 20 * Math.sin(2 * Math.PI * t / 2.5) * scale;
+        const driftOffset = 30 * Math.cos(2 * Math.PI * t / 4) * scale;
+        const pulseScale = 1 + 0.05 * Math.sin(2 * Math.PI * t / 3);
+        const zoomScale = 1 + (0.02 * t); // Simulates 5px per sec zoom on 180 base
+
+        const gold = '#9B6A2F';
+
+        // Scene 1: Names (Lucien) - red
+        const alpha1 = getAlpha(t, 0, numScenes, duration);
+        if (alpha1 > 0) {
+          ctx.save();
+          ctx.globalAlpha = alpha1;
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 4 * scale;
+          ctx.shadowOffsetX = 2 * scale;
+          ctx.shadowOffsetY = 2 * scale;
+          ctx.fillStyle = '#C53030';
+          const g = inputs.groom.value || 'Groom';
+          const b = inputs.bride.value || 'Bride';
+          fillTextSmart(ctx, g, canvas.width / 2, (canvas.height * 0.24) + floatOffset, Math.floor(230 * scale * pulseScale), 'Lucien', maxWidth);
+          fillTextSmart(ctx, b, canvas.width / 2, (canvas.height * 0.33) + floatOffset, Math.floor(230 * scale * pulseScale), 'Lucien', maxWidth);
+          ctx.restore();
+        }
+
+        // Scene 2: Extra detail (Futura) - gold with slide-in + zoom
+        const alpha2 = getAlpha(t, 1, numScenes, duration);
+        if (alpha2 > 0) {
+          ctx.save();
+          ctx.globalAlpha = alpha2;
+          ctx.textAlign = 'center';
+          ctx.fillStyle = gold;
+          ctx.shadowColor = 'rgba(255,255,255,0.35)';
+          ctx.shadowBlur = 6 * scale;
+          ctx.shadowOffsetX = 2 * scale;
+          ctx.shadowOffsetY = 2 * scale;
+          const line = extraVal !== '' ? extraVal : (inputs.venue.value || 'The Grand Venue');
+          const x = (canvas.width / 2) + ((1 - alpha2) * (-200 * scale));
+          fillTextSmart(ctx, line, x, (canvas.height * 0.46) + floatOffset, Math.floor(95 * scale * zoomScale), 'FuturaCustom', maxWidth, 2, 1.45);
+          ctx.restore();
+        }
+
+        // Scene 3: Date + Venue (Lora)
+        const alpha3 = getAlpha(t, 2, numScenes, duration);
+        if (alpha3 > 0) {
+          ctx.save();
+          ctx.globalAlpha = alpha3;
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(255,255,255,0.35)';
+          ctx.shadowBlur = 5 * scale;
+          ctx.shadowOffsetX = 2 * scale;
+          ctx.shadowOffsetY = 2 * scale;
+
+          const dt = inputs.date.value || 'October 24, 2026';
+          ctx.fillStyle = gold;
+          fillTextSmart(ctx, dt, (canvas.width / 2) + driftOffset, (canvas.height * 0.55) + floatOffset, Math.floor(135 * scale), 'LoraCustom', maxWidth, 2, 1.16);
+
+          ctx.fillStyle = gold;
+          fillTextSmart(ctx, 'VENUE', canvas.width / 2, (canvas.height * 0.72) + floatOffset, Math.floor(120 * scale), 'LoraCustom', maxWidth);
+
+          ctx.fillStyle = '#111111';
+          const v = inputs.venue.value || 'The Grand Venue';
+          fillTextSmart(ctx, v, canvas.width / 2, (canvas.height * 0.78) + floatOffset, Math.floor(105 * scale), 'LoraCustom', maxWidth, 3, 1.13);
+
+          ctx.restore();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+          templateId: templateSelect.value || 'default',
+          groom: inputs.groom.value,
+          bride: inputs.bride.value,
+          date: inputs.date.value,
+          venue: inputs.venue.value,
+          extraText1: inputs.extra1.value,
+          duration: Number.isFinite(video.duration) ? video.duration : undefined
+        };
+
+        status.textContent = 'Rendering High Quality Video... Please wait.';
+        status.className = 'loading';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+
+          if (!response.ok) {
+            let errDetails = 'Failed to generate video';
+            try {
+              const err = await response.json();
+              errDetails = err?.details || err?.error || errDetails;
+            } catch {}
+            throw new Error(errDetails);
+          }
+
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `WeddingInvite-${Date.now()}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          status.textContent = 'Success! Your video has been downloaded.';
+          status.className = 'success';
+        } catch (err) {
+          status.textContent = 'Error: ' + err.message;
+          status.className = 'error';
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

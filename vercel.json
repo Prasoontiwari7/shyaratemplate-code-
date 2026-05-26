@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": null,
+  "outputDirectory": "public",
+  "functions": {
+    "api/generate.ts": {
+      "maxDuration": 60,
+      "includeFiles": "node_modules/ffmpeg-static/ffmpeg*"
+    }
+  }
+}
+
